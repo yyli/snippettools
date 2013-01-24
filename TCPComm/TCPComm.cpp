@@ -57,7 +57,7 @@ TCPComm::TCPComm(const char* hostname, int port) : setup(false), type(CLIENT), i
     setup = true;
 }
 
-TCPComm::TCPComm(int port, int maxConn) : setup(false), type(SERVER), server_loop_id(0), maxConn(maxConn) {
+TCPComm::TCPComm(int port, int maxConn, void (*process_loop) (char *, int, void *), void * args) : setup(false), type(SERVER), server_loop_id(0), maxConn(maxConn) {
     signal(SIGPIPE, SIG_IGN);
 
     int sock;
@@ -96,8 +96,10 @@ TCPComm::TCPComm(int port, int maxConn) : setup(false), type(SERVER), server_loo
     }
 
     TCPCommBootStrap *bootStrapArgs = new TCPCommBootStrap;
-    bootStrapArgs->context          = this;
-    bootStrapArgs->sock             = new int;
+    bootStrapArgs->context  = this;
+    bootStrapArgs->sock     = new int;
+    bootStrapArgs->function = process_loop;
+    bootStrapArgs->args     = args;
     memcpy(bootStrapArgs->sock, &sock, sizeof(int));
 
     pthread_attr_init(&thread_attr);
@@ -125,8 +127,10 @@ void * TCPComm::accept_loop_helper(void *args) {
 }
 
 void * TCPComm::accept_loop(void *args) {
-    TCPCommBootStrap *bootStrapArgs = (TCPCommBootStrap *)args;
-    int sock                        = *(int *)bootStrapArgs->sock;
+    TCPCommBootStrap *bootStrapArgs          = (TCPCommBootStrap *)args;
+    int sock                                 = *(int *)bootStrapArgs->sock;
+    void (*process_loop)(char*, int, void *) = bootStrapArgs->function;
+    void *fargs                              = bootStrapArgs->args;
     delete (int *)bootStrapArgs->sock;
     delete bootStrapArgs;
 
@@ -162,12 +166,14 @@ void * TCPComm::accept_loop(void *args) {
         int avail_id = available_connections.front();
         available_connections.pop_front();
 
-        bootStrapArgs          = new TCPCommBootStrap;
-        bootStrapArgs->context = this;
-        bootStrapArgs->sock    = new int;
+        bootStrapArgs           = new TCPCommBootStrap;
+        bootStrapArgs->context  = this;
+        bootStrapArgs->sock     = new int;
         memcpy(bootStrapArgs->sock, &client_sock, sizeof(int));
-        bootStrapArgs->id      = new int;
+        bootStrapArgs->id       = new int;
         memcpy(bootStrapArgs->id, &avail_id, sizeof(int));
+        bootStrapArgs->function = process_loop;
+        bootStrapArgs->args     = fargs;
 
         if (pthread_create(&pthread_connections[avail_id], &thread_attr, server_loop_helper, (void *)bootStrapArgs) != 0) {
             perror("pthread_create server_loop");
@@ -183,9 +189,12 @@ void * TCPComm::accept_loop(void *args) {
 }
 
 void * TCPComm::server_loop(void *args) {
-    TCPCommBootStrap *bootStrapArgs = (TCPCommBootStrap *)args;
-    int sock                        = *(int *)bootStrapArgs->sock;
-    int id                          = *(int *)bootStrapArgs->id;
+    TCPCommBootStrap *bootStrapArgs          = (TCPCommBootStrap *)args;
+    int sock                                 = *(int *)bootStrapArgs->sock;
+    int id                                   = *(int *)bootStrapArgs->id;
+    void (*process_loop)(char*, int, void *) = bootStrapArgs->function;
+    void *fargs                              = bootStrapArgs->args;
+
     delete (int *)bootStrapArgs->sock;
     delete (int *)bootStrapArgs->id;
     delete bootStrapArgs;
@@ -198,8 +207,12 @@ void * TCPComm::server_loop(void *args) {
         if (buf_size <= 0)
             break;
 
-        for (int i = 0; i < buf_size; i++)
-            printf("%c", buf[i]);
+        if (process_loop != NULL)
+            process_loop(buf, buf_size, fargs);
+        else 
+            std::cout << "NULL FUCNTIONS" << std::endl;
+
+        delete[] buf;
     }
 
     pthread_mutex_lock(connMutex);

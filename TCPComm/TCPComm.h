@@ -9,13 +9,14 @@
 struct TCPCommBootStrap {
     void *context;
     void *sock;
-    void *function;
+    void (*function)(char*, int, void *);
+    void *args;
     void *id;
 };
 
 class TCPComm {
     public:
-        TCPComm(int port, int maxConn);
+        TCPComm(int port, int maxConn, void (*process_loop) (char *, int, void *), void * args);
         TCPComm(const char* hostname, int port);
         ~TCPComm();
 
