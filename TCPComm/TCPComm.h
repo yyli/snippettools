@@ -6,23 +6,19 @@
 
 #define HEADER_SIZE 12
 
+class TCPComm;
+
 struct TCPCommBootStrap {
     void *context;
     void *sock;
-    void (*function)(char*&, int&, void *);
+    void (*function)(TCPComm&, int, void *);
     void *args;
     void *id;
 };
 
-enum TCPCommReadType {
-    READ,
-    NOREAD,
-    THREADED
-};
-
 class TCPComm {
     public:
-        TCPComm(int port, int maxConn, TCPCommReadType sType, void (*process_loop) (char *&, int&, void *), void * args);
+        TCPComm(int port, int maxConn, void (*process_loop) (TCPComm&, int, void *), void * args);
         TCPComm(const char* hostname, int port);
         ~TCPComm();
 
@@ -49,8 +45,6 @@ class TCPComm {
             CLIENT, 
             NONE
         } type;
-
-        TCPCommReadType readType;
 
         /* server stuff */
         pthread_t server_loop_id;
