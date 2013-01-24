@@ -19,10 +19,10 @@ class TCPComm {
         TCPComm(const char* hostname, int port);
         ~TCPComm();
 
-        int client_write(const char* buf, unsigned int size);
-        int server_write(int sock, const char* buf, unsigned int size);
-        int client_read(char** buf);
-        int server_read(int sock, char** buf);
+        int write(const char* buf, unsigned int size);
+        int write(int sock, const char* buf, unsigned int size);
+        int read(char** buf);
+        int read(int sock, char** buf);
 
     private:
         void *server_loop(void *args);

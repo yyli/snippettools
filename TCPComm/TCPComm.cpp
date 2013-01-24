@@ -193,7 +193,7 @@ void * TCPComm::server_loop(void *args) {
     int buf_size = 0;
 
     while (1) {
-        buf_size = server_read(sock, &buf);
+        buf_size = read(sock, &buf);
         if (buf_size <= 0)
             break;
 
@@ -230,19 +230,19 @@ TCPComm::~TCPComm() {
     }
 }
 
-int TCPComm::client_read(char** buf) {
+int TCPComm::read(char** buf) {
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
     }
 
     if (internal_client_sock < 0)
-        return -
+        return -1;
 
-    return server_read(internal_client_sock, buf);
+    return read(internal_client_sock, buf);
 }
 
-int TCPComm::server_read(int sock, char** buf) {
+int TCPComm::read(int sock, char** buf) {
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
@@ -292,7 +292,7 @@ int TCPComm::server_read(int sock, char** buf) {
     return size;
 }
 
-int TCPComm::client_write(const char* buf, unsigned int size) {
+int TCPComm::write(const char* buf, unsigned int size) {
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
@@ -304,10 +304,10 @@ int TCPComm::client_write(const char* buf, unsigned int size) {
     if (internal_client_sock < 0)
         return -1;
 
-    return server_write(internal_client_sock, buf, size);
+    return write(internal_client_sock, buf, size);
 }
 
-int TCPComm::server_write(int sock, const char* buf, unsigned int size) {
+int TCPComm::write(int sock, const char* buf, unsigned int size) {
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
