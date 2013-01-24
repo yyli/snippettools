@@ -151,6 +151,7 @@ void * TCPComm::accept_loop(void *args) {
         if (numConnections >= maxConn) {
             std::cout << "Max number of connections achieved" << std::endl;
             pthread_mutex_unlock(connMutex);
+            close(client_sock);
             continue;
         }
         if (available_connections.empty()) {
@@ -231,6 +232,11 @@ TCPComm::~TCPComm() {
 }
 
 int TCPComm::read(char** buf) {
+    if (type != CLIENT) {
+        std::cerr << "Not set up in CLIENT mode" << std::endl;
+        return -1;
+    }
+
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
@@ -293,6 +299,11 @@ int TCPComm::read(int sock, char** buf) {
 }
 
 int TCPComm::write(const char* buf, unsigned int size) {
+    if (type != CLIENT) {
+        std::cerr << "Not set up in CLIENT mode" << std::endl;
+        return -1;
+    }
+
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
@@ -329,7 +340,7 @@ int TCPComm::write(int sock, const char* buf, unsigned int size) {
         n_sent = send(sock, header + total_sent, HEADER_SIZE - total_sent, 0);
 
         if (n_sent <= 0) {
-            perror("couldn't send jeader data");
+            perror("couldn't send header data");
 
             return -1;
         }
