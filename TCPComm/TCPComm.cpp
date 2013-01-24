@@ -199,7 +199,8 @@ void * TCPComm::server_loop(void *args) {
     delete (int *)bootStrapArgs->id;
     delete bootStrapArgs;
 
-    process_loop(*this, sock, fargs);
+    if (process_loop != NULL)
+        process_loop(*this, sock, fargs);
 
     pthread_mutex_lock(connMutex);
     available_connections.push_back(id);
