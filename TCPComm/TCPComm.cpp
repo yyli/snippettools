@@ -168,8 +168,6 @@ void * TCPComm::accept_loop(void *args) {
         bootStrapArgs->id      = new int;
         memcpy(bootStrapArgs->id, &avail_id, sizeof(int));
 
-        std::cout << "accept loop: " << sock << " " << client_sock << " " << avail_id << std::endl;
-
         if (pthread_create(&pthread_connections[avail_id], &thread_attr, server_loop_helper, (void *)bootStrapArgs) != 0) {
             perror("pthread_create server_loop");
             pthread_mutex_unlock(connMutex);
@@ -178,8 +176,6 @@ void * TCPComm::accept_loop(void *args) {
 
         numConnections++;
         pthread_mutex_unlock(connMutex);
-
-        sleep(1);
     }
 
     pthread_exit(NULL);
@@ -197,12 +193,12 @@ void * TCPComm::server_loop(void *args) {
     int buf_size = 0;
 
     while (1) {
-        if (server_read(sock, &buf, buf_size) < 0)
+        buf_size = server_read(sock, &buf);
+        if (buf_size <= 0)
             break;
+
         for (int i = 0; i < buf_size; i++)
             printf("%c", buf[i]);
-        printf("\n");
-        delete buf;
     }
 
     pthread_mutex_lock(connMutex);
@@ -234,19 +230,19 @@ TCPComm::~TCPComm() {
     }
 }
 
-int TCPComm::client_read(char** buf, int &buf_size) {
+int TCPComm::client_read(char** buf) {
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
     }
 
     if (internal_client_sock < 0)
-        return -1;
+        return -
 
-    return server_read(internal_client_sock, buf, buf_size);
+    return server_read(internal_client_sock, buf);
 }
 
-int TCPComm::server_read(int sock, char** buf, int &buf_size) {
+int TCPComm::server_read(int sock, char** buf) {
     if (!setup) {
         std::cerr << "setting up during constructor failed" << std::endl;
         return -1;
@@ -256,21 +252,22 @@ int TCPComm::server_read(int sock, char** buf, int &buf_size) {
     unsigned int total_read = 0;
     int n_read;
 
+    char start[4];
+    char end[4];
+    uint32_t size;
+
     while (total_read < HEADER_SIZE) {
         n_read = recv(sock, header + total_read, HEADER_SIZE - total_read, 0);
-        std::cout << "read:" << sock << std::endl;
 
-        if (n_read <= 0) {
+        if (n_read < 0) {
             perror("couldn't recieve header data");
             return -1;
+        } else if (n_read == 0) {
+            return 0;
         }
 
         total_read += n_read;
     }
-
-    char start[4];
-    char end[4];
-    uint32_t size;
 
     memcpy(start, header, 4);
     memcpy(&size, header + 4, 4);
@@ -281,18 +278,18 @@ int TCPComm::server_read(int sock, char** buf, int &buf_size) {
     while (total_read < size) {
         n_read = recv(sock, *buf + total_read, size - total_read, 0);
 
-        if (n_read <= 0) {
-            perror("couldn't recieve header data");
-
+        if (n_read < 0) {
+            perror("couldn't recieve data");
             delete[] *buf;
             return -1;
+        } else if (n_read == 0) {
+            return 0;
         }
 
         total_read += n_read;
     }
 
-    buf_size = size;
-    return 0;
+    return size;
 }
 
 int TCPComm::client_write(const char* buf, unsigned int size) {
@@ -340,8 +337,6 @@ int TCPComm::server_write(int sock, const char* buf, unsigned int size) {
         total_sent += n_sent;
     }
 
-    std::cout << "HEADER SENT" << std::endl;
-
     total_sent = 0;
     while (total_sent < size) {
         n_sent = send(sock, buf + total_sent, size - total_sent, 0);
@@ -353,6 +348,5 @@ int TCPComm::server_write(int sock, const char* buf, unsigned int size) {
         total_sent += n_sent;
     }
 
-    std::cout << "DATA SENT" << std::endl;
     return 0;
 }

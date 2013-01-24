@@ -3,5 +3,7 @@
 
 int main(int, char**) {
 	TCPComm tester("localhost", 12345);
-	tester.client_write("hello\n", 6);
+	while (1) {
+		tester.client_write("hello\n", 6);
+	}
 } 

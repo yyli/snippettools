@@ -21,8 +21,8 @@ class TCPComm {
 
         int client_write(const char* buf, unsigned int size);
         int server_write(int sock, const char* buf, unsigned int size);
-        int client_read(char** buf, int &buf_size);
-        int server_read(int sock, char** buf, int &buf_size);
+        int client_read(char** buf);
+        int server_read(int sock, char** buf);
 
     private:
         void *server_loop(void *args);
