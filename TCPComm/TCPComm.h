@@ -9,14 +9,20 @@
 struct TCPCommBootStrap {
     void *context;
     void *sock;
-    void (*function)(char*, int, void *);
+    void (*function)(char*&, int&, void *);
     void *args;
     void *id;
 };
 
+enum TCPCommReadType {
+    READ,
+    NOREAD,
+    THREADED
+};
+
 class TCPComm {
     public:
-        TCPComm(int port, int maxConn, void (*process_loop) (char *, int, void *), void * args);
+        TCPComm(int port, int maxConn, TCPCommReadType sType, void (*process_loop) (char *&, int&, void *), void * args);
         TCPComm(const char* hostname, int port);
         ~TCPComm();
 
@@ -44,6 +50,8 @@ class TCPComm {
             NONE
         } type;
 
+        TCPCommReadType readType;
+
         /* server stuff */
         pthread_t server_loop_id;
         int maxConn;
@@ -61,7 +69,5 @@ class TCPComm {
         /* client stuff */
         int internal_client_sock;
 };
-
-
 
 #endif

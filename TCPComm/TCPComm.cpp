@@ -57,7 +57,7 @@ TCPComm::TCPComm(const char* hostname, int port) : setup(false), type(CLIENT), i
     setup = true;
 }
 
-TCPComm::TCPComm(int port, int maxConn, void (*process_loop) (char *, int, void *), void * args) : setup(false), type(SERVER), server_loop_id(0), maxConn(maxConn) {
+TCPComm::TCPComm(int port, int maxConn, TCPCommReadType rType, void (*process_loop) (char *&, int&, void *), void * args) : setup(false), type(SERVER), readType(rType), server_loop_id(0), maxConn(maxConn) {
     signal(SIGPIPE, SIG_IGN);
 
     int sock;
@@ -129,7 +129,7 @@ void * TCPComm::accept_loop_helper(void *args) {
 void * TCPComm::accept_loop(void *args) {
     TCPCommBootStrap *bootStrapArgs          = (TCPCommBootStrap *)args;
     int sock                                 = *(int *)bootStrapArgs->sock;
-    void (*process_loop)(char*, int, void *) = bootStrapArgs->function;
+    void (*process_loop)(char*&, int&, void *) = bootStrapArgs->function;
     void *fargs                              = bootStrapArgs->args;
     delete (int *)bootStrapArgs->sock;
     delete bootStrapArgs;
@@ -192,7 +192,7 @@ void * TCPComm::server_loop(void *args) {
     TCPCommBootStrap *bootStrapArgs          = (TCPCommBootStrap *)args;
     int sock                                 = *(int *)bootStrapArgs->sock;
     int id                                   = *(int *)bootStrapArgs->id;
-    void (*process_loop)(char*, int, void *) = bootStrapArgs->function;
+    void (*process_loop)(char*&, int&, void *) = bootStrapArgs->function;
     void *fargs                              = bootStrapArgs->args;
 
     delete (int *)bootStrapArgs->sock;
@@ -203,14 +203,21 @@ void * TCPComm::server_loop(void *args) {
     int buf_size = 0;
 
     while (1) {
-        buf_size = read(sock, &buf);
-        if (buf_size <= 0)
-            break;
+        if (readType == READ) {
+            buf_size = read(sock, &buf);
+            if (buf_size <= 0)
+                break;
+        }
 
         if (process_loop != NULL)
             process_loop(buf, buf_size, fargs);
-        else 
-            std::cout << "NULL FUCNTIONS" << std::endl;
+
+        if (buf != NULL && buf_size > 0) {
+            if (write(sock, buf, buf_size) < 0) {
+                std::cerr << "write failed" << std::endl;
+                break;
+            }
+        }
 
         delete[] buf;
     }
