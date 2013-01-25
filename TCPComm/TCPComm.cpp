@@ -202,6 +202,7 @@ void * TCPComm::server_loop(void *args) {
     if (process_loop != NULL)
         process_loop(*this, sock, fargs);
 
+    close(sock);
     pthread_mutex_lock(connMutex);
     available_connections.push_back(id);
     numConnections--;
@@ -354,6 +355,8 @@ int TCPComm::write(int sock, const char* buf, unsigned int size) {
 
         if (n_sent <= 0) {
             perror("couldn't send data");
+
+            return -1;
         }
 
         total_sent += n_sent;
