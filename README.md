@@ -7,3 +7,5 @@ wrapper class for clock_gettime, allows for multiple timer objects and get elaps
 calculates CPU flops
 ### git_find_blobs:
 finds the files in git repo greate than a specific size
+### gen_gauss_c:
+Generates gaussian numbers using Box-Muller transform in polar form.
