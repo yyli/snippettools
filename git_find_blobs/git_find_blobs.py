@@ -77,4 +77,4 @@ if __name__ == "__main__":
         if len(sys.argv) > 2:
             folder = sys.argv[2]
 
-    git_find_blobs(max_size, '~/Private/class')
+    git_find_blobs(max_size, folder)
