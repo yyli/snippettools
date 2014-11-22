@@ -15,16 +15,16 @@ int main() {
     Timer e(CLOCK_THREAD_CPUTIME_ID);
     while(1)
     {
-        MiniBenchmark::getInstance().start("all");
+        MiniBenchmark::BENCHMARK_BEGIN("all");
         a.start();
         b.start();
         c.start();
         d.start();
         e.start();
 
-        MiniBenchmark::BEGIN_BENCHMARK("hi");
+        MiniBenchmark::BENCHMARK_BEGIN("hi");
         usleep(1*1000000);
-        MiniBenchmark::END_BENCHMARK("hi");
+        MiniBenchmark::BENCHMARK_END("hi");
 
         a.end();
         b.end();
@@ -39,10 +39,9 @@ int main() {
         printf("   THRD: %15.10lfms\n", e.elapsed()*1000);
         printf("\n");
        
-        MiniBenchmark::getInstance().end("all");
+        MiniBenchmark::BENCHMARK_END("all");
         MiniBenchmark::BENCHMARK_PRINT("all");
-        MiniBenchmark::BENCHMARK_PRINT_MS("all");
-        MiniBenchmark::getInstance().printElapsed(1000);
+        MiniBenchmark::BENCHMARK_PRINT_MS();
     }
     return 0;
 }

@@ -1,8 +1,8 @@
 # Snippets and Tools
 ### Random useful tools and snippets of code
 ***
-### timer:
-wrapper class for clock_gettime, allows for multiple timer objects and get elapsed time or time passed since start
+### Mini Benchmark:
+allows for multiple timer objects and get elapsed time or time passed since start
 ### flops:
 calculates CPU flops
 ### git_find_blobs:
